@@ -1,0 +1,174 @@
+#!perl
+
+# DATE
+# VERSION
+
+use strict;
+use warnings;
+
+use Getopt::Long::Complete;
+
+my %Opts = (
+    postprocess => 1,
+    format => 'context',
+    color => $ENV{COLOR} // (-t STDOUT),
+);
+
+my %Colors = (
+    path_line   => "\e[1m",
+    linum_line  => "\e[36m",
+    delete_line => "\e[31m",
+    insert_line => "\e[32m",
+    delete_word => "\e[7m",
+    insert_word => "\e[7m",
+);
+
+sub sanity_check {
+    require File::Which;
+    File::Which::which("diff") or die "diffwc: Can't find diff in PATH\n";
+}
+
+sub parse_cmdline {
+    local @ARGV = @ARGV;
+    # updated to diff 3.3 + color
+    GetOptions(
+        normal => sub {},
+        'brief|q' => sub {},
+        'report-identical-files|s' => sub {},
+        'c' => sub { $Opts{format} = 'context' },
+        'context|C' => sub { $Opts{format} = 'context' }, # XXX should've been context|C:i, but currently not supported by GLC
+        'u' => sub { $Opts{format} = 'unified' },
+        'unified|U' => sub { $Opts{format} = 'unified' }, # XXX should've been unified|U:i, but currently not supported by GLC
+        'ed|e' => sub {},
+        'rcs|n' => sub {},
+        'side-by-side|y' => sub { $Opts{format} = 'side-by-side' },
+        'width|W=i' => sub {},
+        'left-column' => sub {},
+        'suppress-common-lines' => sub {},
+        'show-c-function|p' => sub {},
+        'show-function-line|F=s' => sub {},
+        'label=s' => sub {},
+        'expand-tabs|t' => sub {},
+        'initial-tab|T' => sub {},
+        'tabsize=i' => sub {},
+        'suppress-blank-empty' => sub {},
+        'paginate|l' => sub {},
+        'recursive|r' => sub {},
+        'new-file|N' => sub {},
+        'unidirectional-new-file' => sub {},
+        'ignore-file-name-case!' => sub {},
+        'exclude|x=s' => sub {},
+        'exclude-from|X=s' => sub {}, # filename
+        'starting-file|S' => sub {}, # filename
+        'from-file=s' => sub {}, # filename
+        'to-file=s' => sub {}, # filename
+        'ignore-case|i' => sub {},
+        'ignore-tab-expansion|E' => sub {},
+        'ignore-trailing-space|Z' => sub {},
+        'ignore-space-change|b' => sub {},
+        'ignore-all-space|w' => sub {},
+        'ignore-blank-lines|B' => sub {},
+        'ignore-matching-lines|I=s' => sub {},
+        'text|a' => sub {},
+        'strip-trailing-cr' => sub {},
+        'ifdef|D=s' => sub {},
+        'GTYPE-group-format=s' => sub {},
+        'line-format=s' => sub {},
+        'LTYPE-line-format=s' => sub {},
+        'minimal|d' => sub {},
+        'horizon-lines=i' => sub {},
+        'speed-large-files' => sub {},
+        'help' => sub {},
+        'version|v' => sub {},
+
+        # user asks for diff's --color, let's skip post-processing then
+        'color' => sub { $Opts{postprocess} = 0 },
+    );
+}
+
+sub run {
+    require ShellQuote::Any::Tiny;
+    require Text::WordDiff::Unified::ANSIColor;
+
+    local $Text::WordDiff::Unified::ANSIColor::colors{delete_line} = $Colors{delete_line};
+    local $Text::WordDiff::Unified::ANSIColor::colors{insert_line} = $Colors{insert_line};
+    local $Text::WordDiff::Unified::ANSIColor::colors{delete_word} = $Colors{delete_word};
+    local $Text::WordDiff::Unified::ANSIColor::colors{insert_word} = $Colors{insert_word};
+
+    $Opts{postprocess} = 0 unless $Opts{format} eq 'unified';
+    $Opts{postprocess} = 0 unless $Opts{color};
+    unless ($Opts{postprocess}) {
+        exec "diff", @ARGV;
+    }
+
+    my $cmd = "diff" . (@ARGV ? " " : "") .
+        join(" ", map { ShellQuote::Any::Tiny::shell_quote($_) } @ARGV);
+    open my $diff, "$cmd |" or die "diffwc: Can't run diff: $!\n";
+
+    my (@inslines, @dellines);
+    my $code_print_ins_del_lines = sub {
+        return unless @inslines || @dellines;
+        if (@inslines != @dellines || @inslines > 5) {
+            for (@dellines) {
+                print $Colors{delete_line}, $_, "\e[0m\n";
+            }
+            for (@inslines) {
+                print $Colors{insert_line}, $_, "\e[0m\n";
+            }
+        } else {
+            my $lines1 = "";
+            for (@dellines) { s/^-//; $lines1 .= "$_\n" }
+            my $lines2 = "";
+            for (@inslines) { s/^[+]//; $lines2 .= "$_\n" }
+            print Text::WordDiff::Unified::ANSIColor::word_diff(
+                $lines1, $lines2);
+        }
+        @inslines = (); @dellines = ();
+    };
+    while (defined(my $line = <$diff>)) {
+        chomp $line;
+        if ($line =~ /^(\+\+\+|---) /) {
+            $code_print_ins_del_lines->();
+            print $Colors{path_line}, $line, "\e[0m\n";
+        } elsif ($line =~ /^\@/) {
+            $code_print_ins_del_lines->();
+            print $Colors{linum_line}, $line, "\e[0m\n";
+        } elsif ($line =~ /^[+]/) {
+            push @inslines, $line;
+        } elsif ($line =~ /^[-]/) {
+            push @dellines, $line;
+        } else {
+            $code_print_ins_del_lines->();
+            print $line, "\n";
+        }
+    }
+    $code_print_ins_del_lines->();
+
+    # XXX return original diff's exit code
+}
+
+# MAIN
+
+sanity_check();
+parse_cmdline();
+run();
+
+1;
+# ABSTRACT: diff + /w/ord highlighting + /c/olor
+# PODNAME:
+
+=head1 SYNOPSIS
+
+Use as you would use B<diff>.
+
+
+=head1 DESCRIPTION
+
+This is a wrapper for the GNU command-line utility B<diff>. It adds colors (note
+that GNU diff 3.4 or later supports C<--color> already) and
+
+
+=head1 SEE ALSO
+
+
+=cut
