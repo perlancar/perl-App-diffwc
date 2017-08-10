@@ -1,0 +1,77 @@
+#!perl
+
+# DATE
+# VERSION
+
+use strict;
+use warnings;
+
+use Getopt::Long;
+
+my %Opts = (
+);
+
+sub parse_cmdline {
+    GetOptions(
+        'help|h|?' => sub {
+            no warnings 'once';
+            print "Usage:\n";
+            print "  diff ... | diffwc-filter-u [OPTS]\n\n";
+            print "  diffwc-filter-u --help (or -h, -?)\n";
+            print "  diffwc-filter-u --version (or -v)\n";
+            print "\n";
+            print "For more details, see the documentation.\n";
+            exit 0;
+        },
+        'version|v' => sub {
+            no warnings 'once';
+            print "diffwc-filter-u version ", $main::VERSION || 'dev', "\n";
+            exit 0;
+        },
+    );
+}
+
+sub run {
+    require App::diffwc;
+
+    App::diffwc::postprocess(\*STDIN);
+}
+
+# MAIN
+
+parse_cmdline();
+run();
+
+1;
+# ABSTRACT: diff + /w/ord highlighting + /c/olor (filter)
+# PODNAME:
+
+=head1 SYNOPSIS
+
+ % diff ... | diffwc-filter-u
+ % git diff ... | diffwc-filter-u
+
+ % diffwc-filter-u --help (or -h, -?)
+
+ % diffwc-filter-u --version (or -v)
+
+To install as git pager:
+
+ % git config --global pager.diff diffwc-filter-u
+ % git config --global pager.diff diffwc-filter-u
+
+
+=head1 DESCRIPTION
+
+This utility accepts output of diff (-u or unified format only) and adds word
+highlighting and colors to it.
+
+
+=head1 SEE ALSO
+
+L<https://github.com/walles/riff>, a similar Ruby-based utility from which this
+utility is inspired by.
+
+L<diffwc> from the same package, in the form of B<diff> wrapper.
+
+=cut

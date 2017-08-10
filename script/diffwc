@@ -14,15 +14,6 @@ my %Opts = (
     color => $ENV{COLOR} // (-t STDOUT),
 );
 
-my %Colors = (
-    path_line   => "\e[1m",
-    linum_line  => "\e[36m",
-    delete_line => "\e[31m",
-    insert_line => "\e[32m",
-    delete_word => "\e[7m",
-    insert_word => "\e[7m",
-);
-
 sub sanity_check {
     require File::Which;
     File::Which::which("diff") or die "diffwc: Can't find diff in PATH\n";
@@ -87,13 +78,8 @@ sub parse_cmdline {
 }
 
 sub run {
+    require App::diffwc;
     require ShellQuote::Any::Tiny;
-    require Text::WordDiff::Unified::ANSIColor;
-
-    local $Text::WordDiff::Unified::ANSIColor::colors{delete_line} = $Colors{delete_line};
-    local $Text::WordDiff::Unified::ANSIColor::colors{insert_line} = $Colors{insert_line};
-    local $Text::WordDiff::Unified::ANSIColor::colors{delete_word} = $Colors{delete_word};
-    local $Text::WordDiff::Unified::ANSIColor::colors{insert_word} = $Colors{insert_word};
 
     $Opts{postprocess} = 0 unless $Opts{format} eq 'unified';
     $Opts{postprocess} = 0 unless $Opts{color};
@@ -105,44 +91,7 @@ sub run {
         join(" ", map { ShellQuote::Any::Tiny::shell_quote($_) } @ARGV);
     open my $diff, "$cmd |" or die "diffwc: Can't run diff: $!\n";
 
-    my (@inslines, @dellines);
-    my $code_print_ins_del_lines = sub {
-        return unless @inslines || @dellines;
-        if (@inslines != @dellines || @inslines > 5) {
-            for (@dellines) {
-                print $Colors{delete_line}, $_, "\e[0m\n";
-            }
-            for (@inslines) {
-                print $Colors{insert_line}, $_, "\e[0m\n";
-            }
-        } else {
-            my $lines1 = "";
-            for (@dellines) { s/^-//; $lines1 .= "$_\n" }
-            my $lines2 = "";
-            for (@inslines) { s/^[+]//; $lines2 .= "$_\n" }
-            print Text::WordDiff::Unified::ANSIColor::word_diff(
-                $lines1, $lines2);
-        }
-        @inslines = (); @dellines = ();
-    };
-    while (defined(my $line = <$diff>)) {
-        chomp $line;
-        if ($line =~ /^(\+\+\+|---) /) {
-            $code_print_ins_del_lines->();
-            print $Colors{path_line}, $line, "\e[0m\n";
-        } elsif ($line =~ /^\@/) {
-            $code_print_ins_del_lines->();
-            print $Colors{linum_line}, $line, "\e[0m\n";
-        } elsif ($line =~ /^[+]/) {
-            push @inslines, $line;
-        } elsif ($line =~ /^[-]/) {
-            push @dellines, $line;
-        } else {
-            $code_print_ins_del_lines->();
-            print $line, "\n";
-        }
-    }
-    $code_print_ins_del_lines->();
+    App::diffwc::postprocess($diff);
 
     # XXX return original diff's exit code
 }
@@ -164,11 +113,20 @@ Use as you would use B<diff>.
 
 =head1 DESCRIPTION
 
-This is a wrapper for the GNU command-line utility B<diff>. It adds colors (note
-that GNU diff 3.4 or later supports C<--color> already) and
+This is a wrapper for the GNU command-line utility B<diff>. It adds word
+highlighting and colors (note that GNU diff 3.4 or later supports C<--color>
+already).
 
 
 =head1 SEE ALSO
 
+L<https://github.com/walles/riff>, a Ruby-based utility from which this utility
+is inspired by. B<riff> is more git-oriented: it uses the same color scheme from
+git while B<diffwc> comes with its own color schemes. B<riff> comes only as a
+filter, while this package offers a B<diff> wrapper (B<diffwc>) as well as
+wrapper (L<diffwc-filter-u>). B<riff> currently has problems dealing with
+non-unified outputs or multiline word highlighting, and also it does not feel
+like a typical Unix utility to me (no manpages, for example), so I made
+B<diffwc> instead.
 
 =cut
