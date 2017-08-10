@@ -124,7 +124,7 @@ L<https://github.com/walles/riff>, a Ruby-based utility from which this utility
 is inspired by. B<riff> is more git-oriented: it uses the same color scheme from
 git while B<diffwc> comes with its own color schemes. B<riff> comes only as a
 filter, while this package offers a B<diff> wrapper (B<diffwc>) as well as
-wrapper (L<diffwc-filter-u>). B<riff> currently has problems dealing with
+filter (L<diffwc-filter-u>). B<riff> currently has problems dealing with
 non-unified outputs or multiline word highlighting, and also it does not feel
 like a typical Unix utility to me (no manpages, for example), so I made
 B<diffwc> instead.
