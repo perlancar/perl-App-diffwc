@@ -108,7 +108,15 @@ run();
 
 =head1 SYNOPSIS
 
-Use as you would use B<diff>.
+Use as you would use B<diff> (the coloring and word highlighting currently will
+only be shown if you use the unified format):
+
+ % diffwc -u file1 file2
+ % diffwc -ruN My-Dist-0.001 My-Dist-0.002
+
+To alias B<diff> to B<diffwc>, in your shell startup file:
+
+ alias diff=diffwc
 
 
 =head1 DESCRIPTION
