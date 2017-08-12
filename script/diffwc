@@ -93,6 +93,8 @@ sub run {
 
     App::diffwc::postprocess($diff);
 
+    close $diff;
+
     # XXX return original diff's exit code
 }
 
