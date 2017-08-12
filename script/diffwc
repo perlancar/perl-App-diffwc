@@ -139,4 +139,6 @@ non-unified outputs or multiline word highlighting, and also it does not feel
 like a typical Unix utility to me (no manpages, for example), so I made
 B<diffwc> instead.
 
+L<diffwc-filter-u> from the same package, in the form of B<diff> output filter.
+
 =cut
