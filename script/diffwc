@@ -120,6 +120,10 @@ To alias B<diff> to B<diffwc>, in your shell startup file:
 
  alias diff=diffwc
 
+Sample screenshot (using the Firenze color scheme):
+
+# IMAGE: share/images/screenshot.jpg
+
 
 =head1 DESCRIPTION
 
