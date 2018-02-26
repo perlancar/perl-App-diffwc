@@ -132,6 +132,18 @@ highlighting and colors (note that GNU diff 3.4 or later supports C<--color>
 already).
 
 
+=head1 ENVIRONMENT
+
+=head2 COLOR
+
+Boolean.
+
+=head2 COLOR_THEME
+
+String. Will search color themes in C<App::diffwc::ColorTheme::*> as well as
+C<Generic::ColorTheme::*> modules.
+
+
 =head1 SEE ALSO
 
 L<https://github.com/walles/riff>, a Ruby-based utility by which this utility is
