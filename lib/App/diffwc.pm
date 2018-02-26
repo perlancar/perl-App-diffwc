@@ -20,6 +20,33 @@ sub postprocess {
 
     my $fh = shift;
 
+    if ($ENV{COLOR_THEME}) {
+        require Color::Theme::Util;
+        my $theme = Color::Theme::Util::get_color_theme(
+            {module_prefixes => [qw/App::diffwc::ColorTheme Generic::ColorTheme/]}, $ENV{COLOR_THEME});
+        require Color::Theme::Util::ANSI;
+        if ($theme->{colors}{path_line}) {
+            for my $c (keys %Colors) {
+                $Colors{$c} = Color::Theme::Util::ANSI::theme_color_to_ansi($theme, $c);
+            }
+        } elsif ($theme->{colors}{color1}) {
+            my %map = (
+                path_line    => 'color3',
+                linum_line   => 'color4',
+                delete_line  => 'color1',
+                insert_line  => 'color5',
+                delete_word  => 'color1',
+                insert_word  => 'color5',
+            );
+            for my $c (keys %Colors) {
+                $Colors{$c} = Color::Theme::Util::ANSI::theme_color_to_ansi(
+                    $theme, $map{$c});
+            }
+        } else {
+            warn "Unsuitable color theme '$ENV{COLOR_THEME}', ignored";
+        }
+    }
+
     local $Text::WordDiff::Unified::ANSIColor::colors{delete_line} = $Colors{delete_line};
     local $Text::WordDiff::Unified::ANSIColor::colors{insert_line} = $Colors{insert_line};
     local $Text::WordDiff::Unified::ANSIColor::colors{delete_word} = $Colors{delete_word};
