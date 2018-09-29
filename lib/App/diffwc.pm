@@ -99,6 +99,6 @@ sub postprocess {
 
 =head1 SYNOPSIS
 
-See the command-line script L<diffwc> and L<diff-filter>.
+See the command-line script L<diffwc> and L<diffwc-filter-u>.
 
 =cut
