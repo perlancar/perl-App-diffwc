@@ -95,7 +95,9 @@ sub run {
 
     close $diff;
 
-    # XXX return original diff's exit code
+    my $exitcode = $? < 0 ? $? : $? >> 8;
+
+    exit $exitcode;
 }
 
 # MAIN
