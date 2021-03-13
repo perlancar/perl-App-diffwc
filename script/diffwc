@@ -140,10 +140,9 @@ already).
 
 Boolean.
 
-=head2 COLOR_THEME
+=head2 DIFFWC_COLOR_THEME
 
-String. Will search color themes in C<App::diffwc::ColorTheme::*> as well as
-C<Generic::ColorTheme::*> modules.
+String. Will search color themes in C<ColorTheme::App::diffwc::*> modules.
 
 
 =head1 SEE ALSO

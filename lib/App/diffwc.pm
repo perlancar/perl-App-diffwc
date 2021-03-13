@@ -23,7 +23,7 @@ sub postprocess {
     if ($ENV{COLOR_THEME}) {
         require Color::Theme::Util;
         my $theme = Color::Theme::Util::get_color_theme(
-            {module_prefixes => [qw/App::diffwc::ColorTheme Generic::ColorTheme/]}, $ENV{COLOR_THEME});
+            {module_prefixes => [qw/ColorTheme::App::diffwc ColorTheme::Generic/]}, $ENV{DIFFWC_COLOR_THEME});
         require Color::Theme::Util::ANSI;
         if ($theme->{colors}{path_line}) {
             for my $c (keys %Colors) {
