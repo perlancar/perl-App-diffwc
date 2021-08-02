@@ -2,3 +2,4 @@ App-diffwc-*
 .build
 *~
 nytprof*
+.DS_Store
